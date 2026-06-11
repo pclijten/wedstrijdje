@@ -139,6 +139,21 @@ input,select{font:inherit;color:inherit}
 /* sleep-kloon */
 #sleepKloon{position:fixed;z-index:99;pointer-events:none;transform:translate(-50%,-60%)}
 
+/* ---------- Kwart-stippen (gespeeld/bank historie) ---------- */
+.dots{display:flex;gap:2.5px;margin-top:2px;justify-content:center}
+.dot{width:5px;height:5px;border-radius:50%}
+.dot.s{background:var(--in)}
+.dot.b{background:var(--uit)}
+
+/* ---------- Scorebord ---------- */
+.scorebord{background:var(--pitch-ink);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
+.scorebord .sb-team{flex:1;font-family:'Barlow Condensed';font-weight:600;font-size:14px;letter-spacing:.5px;color:rgba(255,255,255,.75);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.scorebord .sb-cijfers{font-family:'Barlow Condensed';font-weight:700;font-size:34px;letter-spacing:2px;color:var(--fluo);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scorebord .sb-goal{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.1);font-size:17px;flex-shrink:0}
+.goal-kies{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding:8px 0 4px}
+.goal-kies .chip .naam{color:var(--ink);background:#E3E8E0}
+.log .goal-bal{font-size:18px;min-width:30px;text-align:center}
+
 /* ---------- Bank / wissels ---------- */
 .bank{background:var(--pitch-ink);border-radius:var(--radius);padding:12px;margin-top:12px;box-shadow:var(--shadow)}
 .bank .bank-kop{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -558,11 +573,18 @@ function renderTeam(){
 function htmlWedstrijden(){
   return `
     <button class="knop vol" id="nieuweWedstrijd" style="margin-bottom:14px">+ Nieuwe wedstrijd</button>
-    ${S.wedstrijden.length ? S.wedstrijden.map(w => `
+    ${S.wedstrijden.length ? S.wedstrijden.map(w => {
+      const voor = (w.goals||[]).filter(g => g.type==='voor').length;
+      const tegen = (w.goals||[]).filter(g => g.type==='tegen').length;
+      const uitslag = (w.goals||[]).length || analyseWedstrijd(w).kwarten
+        ? (w.thuis ? `${voor}–${tegen}` : `${tegen}–${voor}`) : '';
+      return `
       <button class="lijst-item" data-open-w="${w.id}">
         <div><div class="titel">${w.thuis ? esc(S.team.naam)+' – '+esc(w.tegenstander) : esc(w.tegenstander)+' – '+esc(S.team.naam)}</div>
         <div class="meta">${datumNL(w.datum)} · ${esc(w.format)}v${esc(w.format)} · ${esc(w.formatie)}</div></div>
-        <span class="pijl">›</span></button>`).join('')
+        ${uitslag ? `<span class="badge" style="font-family:'Barlow Condensed';font-size:15px;font-weight:700">${uitslag}</span>` : ''}
+        <span class="pijl">›</span></button>`;
+    }).join('')
     : `<div class="kaart leeg">Nog geen wedstrijden.<br>Maak je eerste wedstrijd aan en zet de opstelling per kwart klaar.</div>`}`;
 }
 
@@ -691,6 +713,7 @@ function modalNieuweWedstrijd(){
       datum: $('#mWDatum').value || vandaag,
       kwartduur: parseFloat(($('#mWDuur').value||'15').replace(',','.')) || 15,
       selectie: S.spelers.map(p => p.id),
+      goals: [],
       kwarten: {1:leegKwart(), 2:leegKwart(), 3:leegKwart(), 4:leegKwart()},
       gemaakt: serverTimestamp(),
     };
@@ -811,6 +834,33 @@ function voerPlanUit(i){
   bewaarWedstrijd(); renderWedstrijd();
 }
 
+/* ==================== DOELPUNTEN ==================== */
+function registreerGoal({type, pid = null}){
+  const w = S.wedstrijd;
+  const sec = Math.round(klokSec(huidigKwart()));
+  (w.goals ||= []).push({type, pid, kwart: S.kwart, sec});
+  if (navigator.vibrate) navigator.vibrate(type === 'voor' ? [90,60,90,60,200] : 120);
+  meld(type === 'voor' ? `⚽ GOAL! ${pid ? spelerNaam(pid) : S.team.naam}` : `Tegendoelpunt · ${mmss(sec)}`);
+  bewaarWedstrijd(); renderWedstrijd();
+}
+
+function modalGoalVoor(){
+  const k = huidigKwart();
+  const l = effectieveLineup(k);
+  const veldSpelers = Object.values(l).filter(pid => speler(pid));
+  if (!veldSpelers.length){ registreerGoal({type:'voor'}); return; }
+  openModal(`
+    <h2>⚽ Wie scoorde er?</h2>
+    <div class="goal-kies">${veldSpelers.map(pid => `
+      <div class="chip" data-goal-pid="${pid}" style="cursor:pointer">
+        <div class="shirt">${esc(spelerNr(pid))}</div>
+        <div class="naam">${esc(spelerNaam(pid))}</div>
+      </div>`).join('')}</div>
+    <button class="knop licht vol" id="mGoalOnbekend" style="margin-top:10px">Eigen doelpunt tegenstander / onbekend</button>`);
+  $$('#modalInhoud [data-goal-pid]').forEach(c => c.onclick = () => { sluitModal(); registreerGoal({type:'voor', pid: c.dataset.goalPid}); });
+  $('#mGoalOnbekend').onclick = () => { sluitModal(); registreerGoal({type:'voor'}); };
+}
+
 /* ==================== OPSTELLING-LOGICA ==================== */
 /* k.lineup = startopstelling van het kwart; events bouwen daar live op voort */
 function effectieveLineup(k){
@@ -921,8 +971,9 @@ function analyseWedstrijd(w){
 /* ==================== STATISTIEK-TAB ==================== */
 function htmlStats(){
   if (!S.spelers.length) return `<div class="kaart leeg">Voeg eerst spelers toe.</div>`;
-  const tot = {tijd:{}, keeper:{}, lijn:{}, wedstrijden:{}};
+  const tot = {tijd:{}, keeper:{}, lijn:{}, wedstrijden:{}, goals:{}};
   for (const w of S.wedstrijden){
+    for (const g of (w.goals||[])) if (g.type==='voor' && g.pid) tot.goals[g.pid] = (tot.goals[g.pid]||0) + 1;
     const a = analyseWedstrijd(w);
     if (!a.kwarten) continue;
     for (const [pid, s] of Object.entries(a.tijd)){
@@ -940,41 +991,64 @@ function htmlStats(){
   return `
     ${heeftData ? '' : `<div class="kaart leeg" style="margin-bottom:12px">Nog geen gespeelde wedstrijden.<br>Zodra je opstellingen maakt, verschijnt hier automatisch de speeltijd per speler.</div>`}
     <table class="stat-tabel">
-      <thead><tr><th>Speler</th><th>Wed.</th><th>Speeltijd</th><th>K</th><th>V</th><th>M</th><th>A</th></tr></thead>
+      <thead><tr><th>Speler</th><th>Wed.</th><th>Speeltijd</th><th>⚽</th><th>K</th><th>V</th><th>M</th><th>A</th></tr></thead>
       <tbody>${rijen.map(p => {
         const l = tot.lijn[p.id] || {};
         return `<tr>
           <td class="naam-cel">${esc(p.naam)}</td>
           <td>${tot.wedstrijden[p.id]||0}</td>
           <td class="tijd-cel">${tot.tijd[p.id] ? uurMin(tot.tijd[p.id]) : '—'}</td>
+          <td style="font-weight:700">${tot.goals[p.id]||0}</td>
           <td>${tot.keeper[p.id]||0}</td>
           <td>${l.V||0}</td><td>${l.M||0}</td><td>${l.A||0}</td></tr>`;
       }).join('')}</tbody>
     </table>
     <p style="font-size:12px;color:var(--ink-2);margin-top:10px;line-height:1.5">
-      K = kwarten als keeper · V/M/A = kwarten in verdediging, middenveld en aanval.
+      ⚽ = doelpunten · K = kwarten als keeper · V/M/A = kwarten in verdediging, middenveld en aanval.
       Speeltijd komt van de kwartklok; zonder klok telt de ingestelde kwartduur.</p>`;
 }
 
 /* ==================== WEDSTRIJD: WEERGAVE ==================== */
 function renderWedstrijd(){
   const w = S.wedstrijd; if (!w) return;
+  w.goals ||= [];
   const k = huidigKwart();
   const slots = bouwSlots(w.format, w.formatie);
   const lineup = effectieveLineup(k);
   const opVeld = new Set(Object.values(lineup));
-  const bank = (w.selectie||[]).filter(pid => !opVeld.has(pid) && speler(pid));
   const live = kwartLive(k);
   const aKwart = analyseKwart(w, k);
   const aWed = analyseWedstrijd(w);
+  const bank = (w.selectie||[]).filter(pid => !opVeld.has(pid) && speler(pid))
+    .sort((a,b) => (aWed.tijd[a]||0) - (aWed.tijd[b]||0));      // minst gespeeld vooraan
+
+  /* historie: per eerder gespeeld kwart — speelde (groen) of bank (rood) */
+  const historie = {};
+  for (let nr = 1; nr < Number(S.kwart); nr++){
+    const kk = w.kwarten[nr];
+    if (!kk || !kwartGespeeld(kk)) continue;
+    const a = analyseKwart(w, kk);
+    for (const pid of (w.selectie||[]))
+      (historie[pid] ||= []).push({nr, speelde: (a.tijd[pid]||0) > 0});
+  }
+  const dotsHtml = pid => (historie[pid]||[]).length
+    ? `<div class="dots">${historie[pid].map(h =>
+        `<span class="dot ${h.speelde?'s':'b'}" title="Kwart ${h.nr}: ${h.speelde?'gespeeld':'bank'}"></span>`).join('')}</div>`
+    : '';
 
   const chipHtml = (pid, bron, slotId='') => {
     const sel = S.geselecteerd?.pid === pid;
     return `<div class="chip ${slotId==='K'?'keeper':''} ${sel?'geselecteerd':''}"
       data-chip="${pid}" data-bron="${bron}" data-chipslot="${slotId}">
       <div class="shirt">${esc(spelerNr(pid))}</div>
-      <div class="naam">${esc(spelerNaam(pid))}</div></div>`;
+      <div class="naam">${esc(spelerNaam(pid))}</div>${dotsHtml(pid)}</div>`;
   };
+
+  /* score */
+  const voor = w.goals.filter(g => g.type==='voor').length;
+  const tegen = w.goals.filter(g => g.type==='tegen').length;
+  const sbLinks  = w.thuis ? {naam:S.team.naam, n:voor, knop:'goalVoor'}  : {naam:w.tegenstander, n:tegen, knop:'goalTegen'};
+  const sbRechts = w.thuis ? {naam:w.tegenstander, n:tegen, knop:'goalTegen'} : {naam:S.team.naam, n:voor, knop:'goalVoor'};
 
   const v = $('#view-wedstrijd');
   v.innerHTML = `
@@ -982,6 +1056,14 @@ function renderWedstrijd(){
       <h1>${w.thuis ? esc(S.team.naam)+' – '+esc(w.tegenstander) : esc(w.tegenstander)+' – '+esc(S.team.naam)}
       <span class="sub">${datumNL(w.datum)} · ${esc(w.formatie)}</span></h1>
       <button class="terug" id="wInstellingen" title="Wedstrijdinstellingen">⚙️</button></div>
+
+    <div class="scorebord">
+      <button class="sb-goal" id="${sbLinks.knop}" title="Doelpunt ${esc(sbLinks.naam)}">⚽</button>
+      <span class="sb-team">${esc(sbLinks.naam)}</span>
+      <span class="sb-cijfers">${sbLinks.n} – ${sbRechts.n}</span>
+      <span class="sb-team">${esc(sbRechts.naam)}</span>
+      <button class="sb-goal" id="${sbRechts.knop}" title="Doelpunt ${esc(sbRechts.naam)}">⚽</button>
+    </div>
 
     <div class="kwarten">${['1','2','3','4'].map(nr => {
       const kk = w.kwarten[nr];
@@ -1028,17 +1110,30 @@ function renderWedstrijd(){
       </div>
     </div>
 
-    ${k.events.length ? `<div class="log">
-      <div class="sectie-kop">Wissels kwart ${S.kwart}</div>
-      ${[...k.events].map((e,i) => ({...e, i})).sort((a,b) => a.sec - b.sec).map(e => `
-        <div class="log-item">
-          ${e.in ? `<span class="nr in">▲${esc(spelerNr(e.in))}</span>` : ''}
-          ${e.uit ? `<span class="nr uit">▼${esc(spelerNr(e.uit))}</span>` : ''}
-          <span>${e.in ? esc(spelerNaam(e.in)) : ''}${e.in && e.uit ? ' ↔ ' : ''}${e.uit ? esc(spelerNaam(e.uit)) : ''}</span>
-          <span class="min">${mmss(e.sec)}</span>
-          <button class="verwijder" data-weg-ev="${e.i}" title="Wissel verwijderen">✕</button>
-        </div>`).join('')}
-    </div>` : ''}
+    ${(() => {
+      const items = [
+        ...k.events.map((e,i) => ({soort:'wissel', ...e, i})),
+        ...w.goals.map((g,i) => ({soort:'goal', ...g, i})).filter(g => String(g.kwart) === S.kwart),
+      ].sort((a,b) => (a.sec||0) - (b.sec||0));
+      if (!items.length) return '';
+      return `<div class="log">
+        <div class="sectie-kop">Gebeurtenissen kwart ${S.kwart}</div>
+        ${items.map(e => e.soort === 'wissel' ? `
+          <div class="log-item">
+            ${e.in ? `<span class="nr in">▲${esc(spelerNr(e.in))}</span>` : ''}
+            ${e.uit ? `<span class="nr uit">▼${esc(spelerNr(e.uit))}</span>` : ''}
+            <span>${e.in ? esc(spelerNaam(e.in)) : ''}${e.in && e.uit ? ' ↔ ' : ''}${e.uit ? esc(spelerNaam(e.uit)) : ''}</span>
+            <span class="min">${mmss(e.sec)}</span>
+            <button class="verwijder" data-weg-ev="${e.i}" title="Wissel verwijderen">✕</button>
+          </div>` : `
+          <div class="log-item">
+            <span class="goal-bal">${e.type==='voor' ? '⚽' : '🥅'}</span>
+            <span><b>${e.type==='voor' ? (e.pid ? esc(spelerNaam(e.pid)) : 'Doelpunt') : 'Tegendoelpunt'}</b></span>
+            <span class="min">${mmss(e.sec)}</span>
+            <button class="verwijder" data-weg-goal="${e.i}" title="Doelpunt verwijderen">✕</button>
+          </div>`).join('')}
+      </div>`;
+    })()}
 
     <details class="uitklap"><summary>Speeltijd deze wedstrijd</summary>
       <div class="inhoud"><table class="stat-tabel">
@@ -1057,7 +1152,24 @@ function renderWedstrijd(){
   /* ---- koppelingen ---- */
   v.querySelector('#naarTeam').onclick = sluitWedstrijd;
   v.querySelector('#wInstellingen').onclick = modalWedstrijdInstellingen;
-  v.querySelectorAll('[data-kwart]').forEach(b => b.onclick = () => { S.kwart = b.dataset.kwart; S.geselecteerd = null; renderWedstrijd(); });
+  v.querySelectorAll('[data-kwart]').forEach(b => b.onclick = () => {
+    S.kwart = b.dataset.kwart; S.geselecteerd = null;
+    /* leeg kwart? automatisch de eindopstelling van het vorige kwart overnemen */
+    const nr = Number(S.kwart);
+    const doel = huidigKwart();
+    const vorig = w.kwarten[nr-1];
+    if (nr > 1 && !kwartGespeeld(doel) && vorig && kwartGespeeld(vorig)){
+      doel.lineup = effectieveLineup(vorig);
+      bewaarWedstrijd();
+      meld(`Eindopstelling kwart ${nr-1} overgenomen — pas aan waar nodig`);
+    }
+    renderWedstrijd();
+  });
+  v.querySelector('#goalVoor').onclick = modalGoalVoor;
+  v.querySelector('#goalTegen').onclick = () => registreerGoal({type:'tegen'});
+  v.querySelectorAll('[data-weg-goal]').forEach(b => b.onclick = e => {
+    e.stopPropagation(); w.goals.splice(Number(b.dataset.wegGoal),1); bewaarWedstrijd(); renderWedstrijd();
+  });
   v.querySelector('#klokStart').onclick = klokStartPauze;
   v.querySelector('#klokReset').onclick = klokReset;
   const kp = v.querySelector('#kopieerKwart'); if (kp) kp.onclick = kopieerVorigKwart;
