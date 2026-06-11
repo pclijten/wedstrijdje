@@ -183,6 +183,12 @@ input,select{font:inherit;color:inherit}
 .login .bord{background:var(--pitch-ink);border-radius:20px;padding:30px 26px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .login h1{font-family:'Barlow Condensed';font-weight:700;font-size:34px;letter-spacing:1px;color:var(--fluo);text-transform:uppercase;line-height:1}
 .login p{color:rgba(255,255,255,.65);font-size:13.5px;margin:10px 0 22px;line-height:1.5}
+.login .of{display:flex;align-items:center;gap:10px;margin:14px 0;color:rgba(255,255,255,.4);font-size:12px}
+.login .of::before,.login .of::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.18)}
+.invoer.donker{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff}
+.invoer.donker::placeholder{color:rgba(255,255,255,.35)}
+.invoer.donker:focus{border-color:var(--fluo)}
+.code-invoer{text-transform:uppercase;text-align:center;font-family:'Barlow Condensed';font-size:22px;letter-spacing:5px}
 
 /* ---------- Klein spul ---------- */
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:#E3E8E0;color:var(--ink-2);letter-spacing:.3px}
@@ -204,6 +210,16 @@ input,select{font:inherit;color:inherit}
     <h1>Opstelling</h1>
     <p>Maak per kwart je opstelling, sleep wissels het veld in en zie precies wie hoeveel speelt.</p>
     <button class="knop fluo vol" id="googleLogin">Inloggen met Google</button>
+    <div class="of"><span>of</span></div>
+    <button class="knop licht vol" id="codeLoginToon">Inloggen met teamcode</button>
+    <div id="codeLoginForm" style="display:none;margin-top:14px;text-align:left">
+      <div class="veldgroep"><label style="color:rgba(255,255,255,.6)">Je naam</label>
+        <input class="invoer donker" id="loginNaam" placeholder="Bijv. Paul" autocomplete="off"></div>
+      <div class="veldgroep"><label style="color:rgba(255,255,255,.6)">Teamcode</label>
+        <input class="invoer donker code-invoer" id="loginCode" placeholder="ABC123" maxlength="6"></div>
+      <button class="knop fluo vol" id="codeLoginOk">Aansluiten bij team</button>
+      <p style="font-size:11.5px;color:rgba(255,255,255,.45);margin-top:10px;line-height:1.5">Je login is gekoppeld aan dit apparaat. Opnieuw inloggen kan altijd met dezelfde teamcode.</p>
+    </div>
   </div>
 </div>
 
@@ -233,7 +249,7 @@ const firebaseConfig = {
 
 /* ==================== IMPORTS & INIT ==================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, updateProfile, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
          getDocs, query, where, onSnapshot, serverTimestamp }
@@ -330,12 +346,47 @@ $('#googleLogin').addEventListener('click', async () => {
   try { await signInWithPopup(auth, new GoogleAuthProvider()); }
   catch(e){ meld('Inloggen mislukt: ' + e.code); }
 });
-onAuthStateChanged(auth, user => {
+
+let pendingJoin = null;
+$('#codeLoginToon').addEventListener('click', () => {
+  const f = $('#codeLoginForm');
+  f.style.display = f.style.display === 'none' ? '' : 'none';
+  if (f.style.display === '') $('#loginNaam').focus();
+});
+$('#codeLoginOk').addEventListener('click', async () => {
+  const naam = $('#loginNaam').value.trim();
+  const code = $('#loginCode').value.trim().toUpperCase();
+  if (naam.length < 2) return meld('Vul je naam in');
+  if (code.length !== 6) return meld('Een teamcode bestaat uit 6 tekens');
+  try {
+    pendingJoin = {code, naam};
+    const cred = await signInAnonymously(auth);
+    await updateProfile(cred.user, {displayName: naam});
+  } catch(e){ pendingJoin = null; meld('Inloggen mislukt: ' + e.code); }
+});
+
+async function joinMetCode(code){
+  const snap = await getDocs(query(collection(db,'teams'), where('code','==',code)));
+  if (snap.empty){ meld('Geen team gevonden met code ' + code); return null; }
+  const t = snap.docs[0];
+  await updateDoc(t.ref, {
+    ['leden.'+S.user.uid]: true,
+    ['ledenInfo.'+S.user.uid]: {naam: S.user.displayName || S.user.email || 'Coach'},
+  });
+  return t;
+}
+
+onAuthStateChanged(auth, async user => {
   S.user = user;
   if (user){
     $('#login').style.display = 'none';
     $('#app').style.display = '';
     startTeams();
+    if (pendingJoin){
+      const {code} = pendingJoin; pendingJoin = null;
+      const t = await joinMetCode(code);
+      if (t){ meld('Welkom bij ' + t.data().naam); openTeam(t.id); }
+    }
   } else {
     $('#login').style.display = '';
     $('#app').style.display = 'none';
@@ -373,7 +424,10 @@ function renderTeams(){
       <button class="knop licht vol" id="joinTeam">Code invoeren</button>
     </div>`;
 
-  v.querySelector('#uitloggen').onclick = () => signOut(auth);
+  v.querySelector('#uitloggen').onclick = () => {
+    if (S.user.isAnonymous && !confirm('Je bent ingelogd zonder account. Na uitloggen kun je opnieuw inloggen met je teamcode. Doorgaan?')) return;
+    signOut(auth);
+  };
   v.querySelectorAll('[data-open-team]').forEach(b => b.onclick = () => openTeam(b.dataset.openTeam));
   v.querySelector('#nieuwTeam').onclick = modalNieuwTeam;
   v.querySelector('#joinTeam').onclick = modalJoinTeam;
@@ -417,14 +471,8 @@ function modalJoinTeam(){
   $('#mCodeOk').onclick = async () => {
     const code = $('#mCode').value.trim().toUpperCase();
     if (code.length !== 6) return meld('Code bestaat uit 6 tekens');
-    const snap = await getDocs(query(collection(db,'teams'), where('code','==',code)));
-    if (snap.empty) return meld('Geen team gevonden met deze code');
-    const t = snap.docs[0];
-    await updateDoc(t.ref, {
-      ['leden.'+S.user.uid]: true,
-      ['ledenInfo.'+S.user.uid]: {naam: S.user.displayName || S.user.email},
-    });
-    sluitModal(); meld('Aangesloten bij ' + t.data().naam); openTeam(t.id);
+    const t = await joinMetCode(code);
+    if (t){ sluitModal(); meld('Aangesloten bij ' + t.data().naam); openTeam(t.id); }
   };
 }
 
