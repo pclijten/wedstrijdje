@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#10271A">
+<title>Opstelling — Coach je team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --grass:#2E7D46;
+  --grass-2:#28713F;
+  --pitch-ink:#10271A;
+  --line:rgba(255,255,255,.82);
+  --paper:#EFF2EC;
+  --card:#FFFFFF;
+  --ink:#16241C;
+  --ink-2:#5B6B60;
+  --hair:#DDE3DA;
+  --fluo:#D6FB41;          /* wisselbord */
+  --in:#3FB950;
+  --uit:#E5484D;
+  --keeper:#F2A33C;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(16,39,26,.08), 0 4px 14px rgba(16,39,26,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font:inherit;color:inherit}
+.cond{font-family:'Barlow Condensed',sans-serif}
+
+.app{max-width:540px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+.view{flex:1;padding:16px 16px 96px;display:none}
+.view.actief{display:block}
+
+/* ---------- Kop ---------- */
+.kop{display:flex;align-items:center;gap:10px;margin-bottom:16px;min-height:40px}
+.kop h1{font-family:'Barlow Condensed';font-weight:700;font-size:26px;letter-spacing:.3px;text-transform:uppercase;flex:1;line-height:1.05}
+.kop .sub{font-size:13px;color:var(--ink-2);font-family:'Inter';text-transform:none;letter-spacing:0;font-weight:500;display:block;margin-top:2px}
+.terug{width:38px;height:38px;border-radius:10px;background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+
+/* ---------- Knoppen ---------- */
+.knop{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:11px;padding:11px 18px;font-weight:600;font-size:15px;background:var(--pitch-ink);color:#fff;box-shadow:var(--shadow)}
+.knop.vol{width:100%}
+.knop.licht{background:var(--card);color:var(--ink)}
+.knop.fluo{background:var(--fluo);color:var(--pitch-ink)}
+.knop.klein{padding:7px 12px;font-size:13px;border-radius:9px}
+.knop.gevaar{background:#fff;color:var(--uit)}
+.knop:disabled{opacity:.45;cursor:default}
+
+/* ---------- Kaarten / lijsten ---------- */
+.kaart{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+.lijst-item{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;width:100%;text-align:left}
+.lijst-item .titel{font-weight:600;font-size:15px}
+.lijst-item .meta{font-size:12.5px;color:var(--ink-2);margin-top:1px}
+.lijst-item .pijl{margin-left:auto;color:var(--ink-2)}
+.leeg{padding:34px 20px;text-align:center;color:var(--ink-2);font-size:14px;line-height:1.55}
+.leeg b{color:var(--ink)}
+
+/* ---------- Formulieren ---------- */
+.veldgroep{margin-bottom:14px}
+.veldgroep label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.invoer{width:100%;padding:11px 13px;border:1.5px solid var(--hair);border-radius:11px;background:#fff;font-size:15px}
+.invoer:focus{outline:none;border-color:var(--grass)}
+.rij{display:flex;gap:10px}
+.rij>*{flex:1}
+
+/* ---------- Segment (formaat, kwarten) ---------- */
+.segment{display:flex;background:#E3E8E0;border-radius:11px;padding:3px;gap:3px}
+.segment button{flex:1;padding:9px 4px;border-radius:9px;font-weight:600;font-size:14px;color:var(--ink-2)}
+.segment button.actief{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(16,39,26,.15)}
+
+/* ---------- Kwart-tabs ---------- */
+.kwarten{display:flex;gap:6px;margin-bottom:12px}
+.kwarten button{flex:1;padding:10px 0;border-radius:11px;background:var(--card);box-shadow:var(--shadow);font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:.5px;color:var(--ink-2)}
+.kwarten button.actief{background:var(--pitch-ink);color:var(--fluo)}
+
+/* ---------- Het veld ---------- */
+.veld-wrap{position:relative;border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.veld{
+  position:relative;aspect-ratio:3/4;width:100%;
+  background:repeating-linear-gradient(0deg,var(--grass) 0 12.5%,var(--grass-2) 12.5% 25%);
+  touch-action:none;
+}
+.veld .lijn{position:absolute;border:2px solid var(--line)}
+.veld .midden{left:0;right:0;top:50%;border-width:1px 0 0}
+.veld .cirkel{left:50%;top:50%;width:24%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%}
+.veld .zestien-b{left:22%;right:22%;bottom:-2px;height:13%;border-bottom:none}
+.veld .zestien-o{left:22%;right:22%;top:-2px;height:13%;border-top:none}
+.veld .vijf-b{left:36%;right:36%;bottom:-2px;height:5.5%;border-bottom:none}
+.veld .vijf-o{left:36%;right:36%;top:-2px;height:5.5%;border-top:none}
+
+/* posities en chips */
+.slot{position:absolute;transform:translate(-50%,-50%);width:64px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.slot .ring{width:46px;height:46px;border-radius:50%;border:2px dashed rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed';font-weight:600;font-size:14px;color:rgba(255,255,255,.75);letter-spacing:.5px}
+.slot.doel ring{border-color:rgba(242,163,60,.8)}
+.chip{display:flex;flex-direction:column;align-items:center;gap:3px;touch-action:none;user-select:none;-webkit-user-select:none}
+.chip .shirt{
+  width:46px;height:46px;border-radius:50%;
+  background:#fff;color:var(--pitch-ink);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed';font-weight:700;font-size:21px;
+  box-shadow:0 2px 6px rgba(0,0,0,.28);
+  border:2.5px solid #fff;
+}
+.chip.keeper .shirt{background:var(--keeper);border-color:var(--keeper);color:#fff}
+.chip .naam{font-size:10.5px;font-weight:600;color:#fff;background:rgba(16,39,26,.78);padding:2px 7px;border-radius:99px;max-width:78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.geselecteerd .shirt{border-color:var(--fluo);box-shadow:0 0 0 4px rgba(214,251,65,.45)}
+.slot.doelwit .ring{border-color:var(--fluo);border-style:solid;background:rgba(214,251,65,.18)}
+.chip.sleept{opacity:.35}
+
+/* sleep-kloon */
+#sleepKloon{position:fixed;z-index:99;pointer-events:none;transform:translate(-50%,-60%)}
+
+/* ---------- Bank / wissels ---------- */
+.bank{background:var(--pitch-ink);border-radius:var(--radius);padding:12px;margin-top:12px;box-shadow:var(--shadow)}
+.bank .bank-kop{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bank .bank-kop .t{font-family:'Barlow Condensed';font-weight:700;font-size:17px;letter-spacing:1px;color:var(--fluo);text-transform:uppercase}
+.bank .bank-kop .n{font-size:12px;color:rgba(255,255,255,.6);font-weight:500}
+.bank-chips{display:flex;gap:12px;flex-wrap:wrap;min-height:74px;align-items:flex-start}
+.bank .chip .naam{background:rgba(255,255,255,.12)}
+.bank .leeg-bank{color:rgba(255,255,255,.45);font-size:13px;padding:18px 6px}
+.bank.doelwit{outline:2px solid var(--fluo);outline-offset:-2px}
+
+/* ---------- Klok / wisselbord ---------- */
+.klok{background:var(--pitch-ink);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow)}
+.klok .tijd{font-family:'Barlow Condensed';font-weight:700;font-size:38px;letter-spacing:2px;color:var(--fluo);line-height:1;min-width:108px;font-variant-numeric:tabular-nums}
+.klok .label{font-size:11px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:3px}
+.klok .acties{margin-left:auto;display:flex;gap:8px}
+.klok .acties button{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:16px}
+.klok .acties button.primair{background:var(--fluo);color:var(--pitch-ink)}
+
+/* ---------- Wissel-log ---------- */
+.log{margin-top:12px}
+.log .log-item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:11px;padding:9px 12px;margin-bottom:7px;box-shadow:var(--shadow);font-size:13.5px}
+.log .nr{font-family:'Barlow Condensed';font-weight:700;font-size:22px;min-width:30px;text-align:center;line-height:1}
+.log .nr.in{color:var(--in)}
+.log .nr.uit{color:var(--uit)}
+.log .min{margin-left:auto;font-family:'Barlow Condensed';font-weight:600;font-size:16px;color:var(--ink-2)}
+.log .verwijder{color:var(--ink-2);font-size:15px;padding:4px}
+
+/* ---------- Speler-rijen ---------- */
+.speler-rij{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:11px;padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.speler-rij .mini-shirt{width:36px;height:36px;border-radius:50%;background:var(--pitch-ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed';font-weight:700;font-size:17px;flex-shrink:0}
+.speler-rij .n{font-weight:600;font-size:14.5px;flex:1}
+.speler-rij .actie{color:var(--ink-2);padding:6px;font-size:15px}
+
+/* ---------- Statistiek-tabel ---------- */
+.stat-tabel{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);font-size:13px}
+.stat-tabel th{font-family:'Barlow Condensed';font-weight:600;font-size:14px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-2);padding:10px 8px;border-bottom:1.5px solid var(--hair);text-align:center}
+.stat-tabel th:first-child,.stat-tabel td:first-child{text-align:left;padding-left:14px}
+.stat-tabel td{padding:10px 8px;border-bottom:1px solid var(--hair);text-align:center;font-variant-numeric:tabular-nums}
+.stat-tabel tr:last-child td{border-bottom:none}
+.stat-tabel .naam-cel{font-weight:600}
+.stat-tabel .tijd-cel{font-family:'Barlow Condensed';font-weight:700;font-size:16px}
+
+/* ---------- Onderbalk ---------- */
+.onderbalk{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:540px;background:var(--card);border-top:1px solid var(--hair);display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:20}
+.onderbalk button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0;font-size:10.5px;font-weight:600;color:var(--ink-2);border-radius:10px}
+.onderbalk button.actief{color:var(--grass)}
+.onderbalk .ico{font-size:19px;line-height:1}
+
+/* ---------- Modal ---------- */
+.modal-achter{position:fixed;inset:0;background:rgba(16,39,26,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal-achter.open{display:flex}
+.modal{background:var(--paper);width:100%;max-width:540px;border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:86dvh;overflow-y:auto}
+.modal h2{font-family:'Barlow Condensed';font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:14px}
+.modal .sluitbalk{width:42px;height:4px;border-radius:2px;background:var(--hair);margin:0 auto 14px}
+
+/* ---------- Login ---------- */
+.login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:
+  repeating-linear-gradient(0deg,var(--grass) 0 12.5%,var(--grass-2) 12.5% 25%)}
+.login .bord{background:var(--pitch-ink);border-radius:20px;padding:30px 26px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.login h1{font-family:'Barlow Condensed';font-weight:700;font-size:34px;letter-spacing:1px;color:var(--fluo);text-transform:uppercase;line-height:1}
+.login p{color:rgba(255,255,255,.65);font-size:13.5px;margin:10px 0 22px;line-height:1.5}
+
+/* ---------- Klein spul ---------- */
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:#E3E8E0;color:var(--ink-2);letter-spacing:.3px}
+.teamcode{font-family:'Barlow Condensed';font-weight:700;font-size:30px;letter-spacing:6px;text-align:center;background:var(--pitch-ink);color:var(--fluo);border-radius:12px;padding:12px;margin:8px 0}
+.melding{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--pitch-ink);color:#fff;font-size:13.5px;font-weight:500;padding:10px 18px;border-radius:99px;box-shadow:var(--shadow);z-index:99;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%}
+.melding.zichtbaar{opacity:1}
+.sectie-kop{font-family:'Barlow Condensed';font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-2);margin:18px 0 10px}
+.uitklap{margin-top:12px}
+.uitklap summary{cursor:pointer;font-weight:600;font-size:14px;padding:12px 14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);list-style:none;display:flex;align-items:center}
+.uitklap summary::after{content:'▾';margin-left:auto;color:var(--ink-2)}
+.uitklap[open] summary::after{content:'▴'}
+.uitklap .inhoud{margin-top:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="login" class="login" style="display:none">
+  <div class="bord">
+    <h1>Opstelling</h1>
+    <p>Maak per kwart je opstelling, sleep wissels het veld in en zie precies wie hoeveel speelt.</p>
+    <button class="knop fluo vol" id="googleLogin">Inloggen met Google</button>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <div id="view-teams" class="view"></div>
+  <div id="view-team" class="view"></div>
+  <div id="view-wedstrijd" class="view"></div>
+</div>
+
+<div id="sleepKloon" style="display:none"></div>
+<div class="modal-achter" id="modalAchter"><div class="modal" id="modalInhoud"></div></div>
+<div class="melding" id="melding"></div>
+
+<script type="module">
+/* ====================================================================
+   FIREBASE CONFIG — vervang door je eigen project-config
+   (Firebase Console → Project settings → Your apps → Web app)
+==================================================================== */
+const firebaseConfig = {
+  apiKey: "VUL_IN",
+  authDomain: "VUL_IN.firebaseapp.com",
+  projectId: "VUL_IN",
+  storageBucket: "VUL_IN.appspot.com",
+  messagingSenderId: "VUL_IN",
+  appId: "VUL_IN"
+};
+
+/* ==================== IMPORTS & INIT ==================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+         getDocs, query, where, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+/* ==================== FORMATIES ==================== */
+/* [x%, y%, lijn]  — keeper wordt automatisch toegevoegd op (50, 90) */
+const FORMATIES = {
+  '6': {
+    '2-1-2': [[30,72,'V'],[70,72,'V'],[50,49,'M'],[30,26,'A'],[70,26,'A']],
+    '1-2-2': [[50,73,'V'],[30,49,'M'],[70,49,'M'],[30,26,'A'],[70,26,'A']],
+    '2-2-1': [[30,72,'V'],[70,72,'V'],[30,47,'M'],[70,47,'M'],[50,24,'A']],
+  },
+  '8': {
+    '3-3-1': [[22,73,'V'],[50,76,'V'],[78,73,'V'],[22,48,'M'],[50,45,'M'],[78,48,'M'],[50,23,'A']],
+    '2-3-2': [[32,74,'V'],[68,74,'V'],[20,48,'M'],[50,45,'M'],[80,48,'M'],[32,23,'A'],[68,23,'A']],
+    '3-2-2': [[22,73,'V'],[50,76,'V'],[78,73,'V'],[32,47,'M'],[68,47,'M'],[32,23,'A'],[68,23,'A']],
+  },
+  '11': {
+    '4-3-3': [[14,75,'V'],[38,78,'V'],[62,78,'V'],[86,75,'V'],[27,52,'M'],[50,48,'M'],[73,52,'M'],[19,25,'A'],[50,21,'A'],[81,25,'A']],
+    '4-4-2': [[14,75,'V'],[38,78,'V'],[62,78,'V'],[86,75,'V'],[14,49,'M'],[38,46,'M'],[62,46,'M'],[86,49,'M'],[35,23,'A'],[65,23,'A']],
+    '3-4-3': [[25,76,'V'],[50,78,'V'],[75,76,'V'],[14,49,'M'],[38,46,'M'],[62,46,'M'],[86,49,'M'],[19,25,'A'],[50,21,'A'],[81,25,'A']],
+  },
+};
+const LIJN_NAAM = {K:'Keeper', V:'Verdediging', M:'Middenveld', A:'Aanval'};
+
+function bouwSlots(format, formatie){
+  const def = (FORMATIES[format] && FORMATIES[format][formatie])
+           || Object.values(FORMATIES[format])[0];
+  const slots = [{id:'K', x:50, y:90, lijn:'K'}];
+  const tel = {V:0, M:0, A:0};
+  for (const [x,y,l] of def){ tel[l]++; slots.push({id:l+tel[l], x, y, lijn:l}); }
+  return slots;
+}
+const slotLijn = id => id[0];
+
+/* ==================== STATE & HELPERS ==================== */
+const S = {
+  user:null, teams:[], team:null, teamId:null,
+  spelers:[], wedstrijden:[],
+  wedstrijd:null, wedstrijdId:null, kwart:'1',
+  teamTab:'wedstrijden', geselecteerd:null,
+  unsub:{}, klokInterval:null, saveTimer:null, lokaalTot:0,
+};
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function meld(t){
+  const m = $('#melding'); m.textContent = t; m.classList.add('zichtbaar');
+  clearTimeout(meld._t); meld._t = setTimeout(()=>m.classList.remove('zichtbaar'), 2600);
+}
+function mmss(sec){
+  sec = Math.max(0, Math.round(sec));
+  return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
+}
+function uurMin(sec){
+  const m = Math.round(sec/60);
+  return m >= 60 ? Math.floor(m/60)+'u'+String(m%60).padStart(2,'0') : m+' min';
+}
+function datumNL(d){
+  try { return new Date(d+'T12:00').toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}); }
+  catch { return d; }
+}
+function nieuweCode(){
+  const t = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6}, () => t[Math.floor(Math.random()*t.length)]).join('');
+}
+function speler(pid){ return S.spelers.find(p => p.id === pid); }
+function spelerNaam(pid){ const p = speler(pid); return p ? p.naam : '—'; }
+function spelerNr(pid){ const p = speler(pid); return p && p.nummer != null && p.nummer !== '' ? p.nummer : '·'; }
+
+/* ---------- Modal ---------- */
+function openModal(html){ $('#modalInhoud').innerHTML = '<div class="sluitbalk"></div>' + html; $('#modalAchter').classList.add('open'); }
+function sluitModal(){ $('#modalAchter').classList.remove('open'); }
+$('#modalAchter').addEventListener('click', e => { if (e.target.id === 'modalAchter') sluitModal(); });
+
+/* ---------- Navigatie ---------- */
+function toon(viewId){
+  $$('.view').forEach(v => v.classList.remove('actief'));
+  $('#view-'+viewId).classList.add('actief');
+  window.scrollTo(0,0);
+}
+function stopUnsubs(...keys){
+  for (const k of keys){ if (S.unsub[k]){ S.unsub[k](); delete S.unsub[k]; } }
+}
+
+/* ==================== AUTH ==================== */
+$('#googleLogin').addEventListener('click', async () => {
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch(e){ meld('Inloggen mislukt: ' + e.code); }
+});
+onAuthStateChanged(auth, user => {
+  S.user = user;
+  if (user){
+    $('#login').style.display = 'none';
+    $('#app').style.display = '';
+    startTeams();
+  } else {
+    $('#login').style.display = '';
+    $('#app').style.display = 'none';
+    stopUnsubs('teams','spelers','wedstrijden','wedstrijd');
+  }
+});
+
+/* ==================== TEAMS ==================== */
+function startTeams(){
+  stopUnsubs('teams');
+  const q = query(collection(db,'teams'), where('leden.'+S.user.uid, '==', true));
+  S.unsub.teams = onSnapshot(q, snap => {
+    S.teams = snap.docs.map(d => ({id:d.id, ...d.data()}))
+                       .sort((a,b) => (a.naam||'').localeCompare(b.naam||''));
+    if (!S.teamId) renderTeams();
+  });
+  renderTeams(); toon('teams');
+}
+
+function renderTeams(){
+  const v = $('#view-teams');
+  v.innerHTML = `
+    <div class="kop"><h1>Mijn teams<span class="sub">${esc(S.user.displayName || S.user.email || '')}</span></h1>
+      <button class="terug" id="uitloggen" title="Uitloggen">⏻</button></div>
+    ${S.teams.length ? S.teams.map(t => `
+      <button class="lijst-item" data-open-team="${t.id}">
+        <div class="mini-shirt" style="width:40px;height:40px;border-radius:50%;background:var(--grass);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed';font-weight:700;font-size:16px">${esc(t.format)}v${esc(t.format)}</div>
+        <div><div class="titel">${esc(t.naam)}</div>
+        <div class="meta">${Object.keys(t.leden||{}).length} coach(es) · code ${esc(t.code)}</div></div>
+        <span class="pijl">›</span>
+      </button>`).join('')
+    : `<div class="kaart leeg">Nog geen teams.<br><b>Maak een team aan</b> of sluit je met een teamcode aan bij een collega-coach.</div>`}
+    <div class="rij" style="margin-top:14px">
+      <button class="knop vol" id="nieuwTeam">+ Nieuw team</button>
+      <button class="knop licht vol" id="joinTeam">Code invoeren</button>
+    </div>`;
+
+  v.querySelector('#uitloggen').onclick = () => signOut(auth);
+  v.querySelectorAll('[data-open-team]').forEach(b => b.onclick = () => openTeam(b.dataset.openTeam));
+  v.querySelector('#nieuwTeam').onclick = modalNieuwTeam;
+  v.querySelector('#joinTeam').onclick = modalJoinTeam;
+}
+
+function modalNieuwTeam(){
+  openModal(`
+    <h2>Nieuw team</h2>
+    <div class="veldgroep"><label>Teamnaam</label>
+      <input class="invoer" id="mTeamNaam" placeholder="Bijv. JO11-1" autocomplete="off"></div>
+    <div class="veldgroep"><label>Speelformat</label>
+      <div class="segment" id="mFormat">
+        <button data-f="6">6 × 6</button><button data-f="8" class="actief">8 × 8</button><button data-f="11">11 × 11</button>
+      </div></div>
+    <button class="knop vol" id="mTeamOk">Team aanmaken</button>`);
+  let format = '8';
+  $$('#mFormat button').forEach(b => b.onclick = () => {
+    $$('#mFormat button').forEach(x => x.classList.remove('actief'));
+    b.classList.add('actief'); format = b.dataset.f;
+  });
+  $('#mTeamOk').onclick = async () => {
+    const naam = $('#mTeamNaam').value.trim();
+    if (!naam) return meld('Geef het team een naam');
+    const ref = await addDoc(collection(db,'teams'), {
+      naam, format, code: nieuweCode(),
+      leden: {[S.user.uid]: true},
+      ledenInfo: {[S.user.uid]: {naam: S.user.displayName || S.user.email}},
+      gemaakt: serverTimestamp(),
+    });
+    sluitModal(); openTeam(ref.id);
+  };
+}
+
+function modalJoinTeam(){
+  openModal(`
+    <h2>Aansluiten bij team</h2>
+    <p style="font-size:13.5px;color:var(--ink-2);margin-bottom:12px">Vraag de teamcode aan een coach van het team (te vinden onder het tabblad Team).</p>
+    <div class="veldgroep"><input class="invoer" id="mCode" placeholder="ABC123" maxlength="6"
+      style="text-transform:uppercase;text-align:center;font-family:'Barlow Condensed';font-size:24px;letter-spacing:5px"></div>
+    <button class="knop vol" id="mCodeOk">Aansluiten</button>`);
+  $('#mCodeOk').onclick = async () => {
+    const code = $('#mCode').value.trim().toUpperCase();
+    if (code.length !== 6) return meld('Code bestaat uit 6 tekens');
+    const snap = await getDocs(query(collection(db,'teams'), where('code','==',code)));
+    if (snap.empty) return meld('Geen team gevonden met deze code');
+    const t = snap.docs[0];
+    await updateDoc(t.ref, {
+      ['leden.'+S.user.uid]: true,
+      ['ledenInfo.'+S.user.uid]: {naam: S.user.displayName || S.user.email},
+    });
+    sluitModal(); meld('Aangesloten bij ' + t.data().naam); openTeam(t.id);
+  };
+}
+
+/* ==================== TEAM ==================== */
+function openTeam(teamId){
+  S.teamId = teamId; S.teamTab = 'wedstrijden';
+  stopUnsubs('team','spelers','wedstrijden');
+  S.unsub.team = onSnapshot(doc(db,'teams',teamId), snap => {
+    if (!snap.exists()){ verlaatTeamView(); return; }
+    S.team = {id:snap.id, ...snap.data()};
+    if (!S.wedstrijdId) renderTeam();
+  });
+  S.unsub.spelers = onSnapshot(collection(db,'teams',teamId,'spelers'), snap => {
+    S.spelers = snap.docs.map(d => ({id:d.id, ...d.data()}))
+      .sort((a,b) => (a.nummer ?? 999) - (b.nummer ?? 999) || a.naam.localeCompare(b.naam));
+    if (!S.wedstrijdId) renderTeam(); else renderWedstrijd();
+  });
+  S.unsub.wedstrijden = onSnapshot(collection(db,'teams',teamId,'wedstrijden'), snap => {
+    S.wedstrijden = snap.docs.map(d => ({id:d.id, ...d.data()}))
+      .sort((a,b) => (b.datum||'').localeCompare(a.datum||''));
+    if (!S.wedstrijdId) renderTeam();
+  });
+  toon('team');
+}
+function verlaatTeamView(){
+  stopUnsubs('team','spelers','wedstrijden');
+  S.teamId = null; S.team = null; S.spelers = []; S.wedstrijden = [];
+  renderTeams(); toon('teams');
+}
+
+function renderTeam(){
+  if (!S.team) return;
+  const v = $('#view-team');
+  const tab = S.teamTab;
+  let inhoud = '';
+  if (tab === 'wedstrijden') inhoud = htmlWedstrijden();
+  if (tab === 'spelers')     inhoud = htmlSpelers();
+  if (tab === 'stats')       inhoud = htmlStats();
+  if (tab === 'instellingen')inhoud = htmlInstellingen();
+
+  v.innerHTML = `
+    <div class="kop"><button class="terug" id="naarTeams">‹</button>
+      <h1>${esc(S.team.naam)}<span class="sub">${esc(S.team.format)} tegen ${esc(S.team.format)}</span></h1></div>
+    ${inhoud}
+    <nav class="onderbalk">
+      ${[['wedstrijden','📋','Wedstrijden'],['spelers','👕','Spelers'],['stats','⏱','Statistiek'],['instellingen','⚙️','Team']]
+        .map(([id,ico,naam]) => `<button data-tab="${id}" class="${tab===id?'actief':''}"><span class="ico">${ico}</span>${naam}</button>`).join('')}
+    </nav>`;
+
+  v.querySelector('#naarTeams').onclick = verlaatTeamView;
+  v.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.teamTab = b.dataset.tab; renderTeam(); });
+  koppelTeamTab(v, tab);
+}
+
+/* ---------- Tab: wedstrijden ---------- */
+function htmlWedstrijden(){
+  return `
+    <button class="knop vol" id="nieuweWedstrijd" style="margin-bottom:14px">+ Nieuwe wedstrijd</button>
+    ${S.wedstrijden.length ? S.wedstrijden.map(w => `
+      <button class="lijst-item" data-open-w="${w.id}">
+        <div><div class="titel">${w.thuis ? esc(S.team.naam)+' – '+esc(w.tegenstander) : esc(w.tegenstander)+' – '+esc(S.team.naam)}</div>
+        <div class="meta">${datumNL(w.datum)} · ${esc(w.format)}v${esc(w.format)} · ${esc(w.formatie)}</div></div>
+        <span class="pijl">›</span></button>`).join('')
+    : `<div class="kaart leeg">Nog geen wedstrijden.<br>Maak je eerste wedstrijd aan en zet de opstelling per kwart klaar.</div>`}`;
+}
+
+/* ---------- Tab: spelers ---------- */
+function htmlSpelers(){
+  return `
+    <button class="knop vol" id="nieuweSpeler" style="margin-bottom:14px">+ Speler toevoegen</button>
+    ${S.spelers.length ? S.spelers.map(p => `
+      <div class="speler-rij">
+        <div class="mini-shirt">${esc(p.nummer ?? '·')}</div>
+        <div class="n">${esc(p.naam)}</div>
+        <button class="actie" data-bewerk-p="${p.id}">✏️</button>
+        <button class="actie" data-weg-p="${p.id}">🗑</button>
+      </div>`).join('')
+    : `<div class="kaart leeg">Nog geen spelers.<br>Voeg je selectie toe — naam en rugnummer is genoeg.</div>`}`;
+}
+
+/* ---------- Tab: instellingen ---------- */
+function htmlInstellingen(){
+  const leden = Object.values(S.team.ledenInfo || {}).map(l => esc(l.naam)).join(', ');
+  return `
+    <div class="kaart">
+      <div class="sectie-kop" style="margin-top:0">Teamcode voor coaches</div>
+      <p style="font-size:13.5px;color:var(--ink-2)">Deel deze code met collega-coaches. Zij kiezen op het startscherm "Code invoeren" en zitten direct in dit team.</p>
+      <div class="teamcode">${esc(S.team.code)}</div>
+      <button class="knop licht vol" id="deelCode">Code kopiëren</button>
+    </div>
+    <div class="kaart">
+      <div class="sectie-kop" style="margin-top:0">Coaches</div>
+      <p style="font-size:14px">${leden || '—'}</p>
+    </div>
+    <div class="kaart">
+      <div class="sectie-kop" style="margin-top:0">Standaard speelformat</div>
+      <div class="segment" id="iFormat">
+        ${['6','8','11'].map(f => `<button data-f="${f}" class="${S.team.format===f?'actief':''}">${f} × ${f}</button>`).join('')}
+      </div>
+      <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px">Per wedstrijd kun je hier altijd van afwijken.</p>
+    </div>
+    <button class="knop gevaar vol" id="verlaatTeam">Team verlaten</button>`;
+}
+
+function koppelTeamTab(v, tab){
+  if (tab === 'wedstrijden'){
+    v.querySelector('#nieuweWedstrijd').onclick = modalNieuweWedstrijd;
+    v.querySelectorAll('[data-open-w]').forEach(b => b.onclick = () => openWedstrijd(b.dataset.openW));
+  }
+  if (tab === 'spelers'){
+    v.querySelector('#nieuweSpeler').onclick = () => modalSpeler();
+    v.querySelectorAll('[data-bewerk-p]').forEach(b => b.onclick = () => modalSpeler(speler(b.dataset.bewerkP)));
+    v.querySelectorAll('[data-weg-p]').forEach(b => b.onclick = async () => {
+      const p = speler(b.dataset.wegP);
+      if (confirm(`${p.naam} verwijderen uit de selectie?`))
+        await deleteDoc(doc(db,'teams',S.teamId,'spelers',p.id));
+    });
+  }
+  if (tab === 'instellingen'){
+    v.querySelector('#deelCode').onclick = async () => {
+      try { await navigator.clipboard.writeText(S.team.code); meld('Code gekopieerd'); }
+      catch { meld('Code: ' + S.team.code); }
+    };
+    v.querySelectorAll('#iFormat button').forEach(b => b.onclick = async () => {
+      await updateDoc(doc(db,'teams',S.teamId), {format: b.dataset.f});
+    });
+    v.querySelector('#verlaatTeam').onclick = async () => {
+      if (!confirm('Weet je zeker dat je dit team wilt verlaten?')) return;
+      const leden = {...S.team.leden}; delete leden[S.user.uid];
+      const ledenInfo = {...(S.team.ledenInfo||{})}; delete ledenInfo[S.user.uid];
+      await updateDoc(doc(db,'teams',S.teamId), {leden, ledenInfo});
+      verlaatTeamView();
+    };
+  }
+}
+
+function modalSpeler(p){
+  openModal(`
+    <h2>${p ? 'Speler bewerken' : 'Speler toevoegen'}</h2>
+    <div class="rij">
+      <div class="veldgroep" style="flex:3"><label>Naam</label>
+        <input class="invoer" id="mSpNaam" value="${esc(p?.naam||'')}" placeholder="Voornaam" autocomplete="off"></div>
+      <div class="veldgroep" style="flex:1"><label>Nr.</label>
+        <input class="invoer" id="mSpNr" value="${esc(p?.nummer ?? '')}" inputmode="numeric" placeholder="7"></div>
+    </div>
+    <button class="knop vol" id="mSpOk">${p ? 'Opslaan' : 'Toevoegen'}</button>`);
+  const ok = async (sluiten) => {
+    const naam = $('#mSpNaam').value.trim();
+    if (!naam) return meld('Vul een naam in');
+    const nr = $('#mSpNr').value.trim();
+    const data = {naam, nummer: nr === '' ? null : Number(nr)};
+    if (p) await updateDoc(doc(db,'teams',S.teamId,'spelers',p.id), data);
+    else   await addDoc(collection(db,'teams',S.teamId,'spelers'), data);
+    if (sluiten) sluitModal();
+    else { $('#mSpNaam').value=''; $('#mSpNr').value=''; $('#mSpNaam').focus(); meld(naam+' toegevoegd'); }
+  };
+  $('#mSpOk').onclick = () => ok(!!p);
+  $('#mSpNaam').addEventListener('keydown', e => { if (e.key === 'Enter') ok(false); });
+}
+
+/* ==================== WEDSTRIJD: AANMAKEN ==================== */
+function leegKwart(){ return {lineup:{}, events:[], klok:{base:0, running:false, start:0}}; }
+
+function modalNieuweWedstrijd(){
+  if (!S.spelers.length) return meld('Voeg eerst spelers toe onder het tabblad Spelers');
+  const vandaag = new Date().toISOString().slice(0,10);
+  openModal(`
+    <h2>Nieuwe wedstrijd</h2>
+    <div class="veldgroep"><label>Tegenstander</label>
+      <input class="invoer" id="mWTegen" placeholder="Bijv. ASV'33 JO11-2" autocomplete="off"></div>
+    <div class="rij">
+      <div class="veldgroep"><label>Datum</label><input class="invoer" type="date" id="mWDatum" value="${vandaag}"></div>
+      <div class="veldgroep"><label>Kwartduur (min)</label><input class="invoer" id="mWDuur" inputmode="decimal" value="12.5"></div>
+    </div>
+    <div class="veldgroep"><label>Thuis of uit</label>
+      <div class="segment" id="mWThuis"><button data-t="1" class="actief">Thuis</button><button data-t="0">Uit</button></div></div>
+    <div class="veldgroep"><label>Format</label>
+      <div class="segment" id="mWFormat">${['6','8','11'].map(f =>
+        `<button data-f="${f}" class="${S.team.format===f?'actief':''}">${f}×${f}</button>`).join('')}</div></div>
+    <button class="knop vol" id="mWOk">Wedstrijd aanmaken</button>`);
+  let thuis = true, format = S.team.format;
+  $$('#mWThuis button').forEach(b => b.onclick = () => { $$('#mWThuis button').forEach(x=>x.classList.remove('actief')); b.classList.add('actief'); thuis = b.dataset.t==='1'; });
+  $$('#mWFormat button').forEach(b => b.onclick = () => { $$('#mWFormat button').forEach(x=>x.classList.remove('actief')); b.classList.add('actief'); format = b.dataset.f; });
+  $('#mWOk').onclick = async () => {
+    const tegenstander = $('#mWTegen').value.trim() || 'Tegenstander';
+    const w = {
+      tegenstander, thuis, format,
+      formatie: Object.keys(FORMATIES[format])[0],
+      datum: $('#mWDatum').value || vandaag,
+      kwartduur: parseFloat(($('#mWDuur').value||'12.5').replace(',','.')) || 12.5,
+      selectie: S.spelers.map(p => p.id),
+      kwarten: {1:leegKwart(), 2:leegKwart(), 3:leegKwart(), 4:leegKwart()},
+      gemaakt: serverTimestamp(),
+    };
+    const ref = await addDoc(collection(db,'teams',S.teamId,'wedstrijden'), w);
+    sluitModal(); openWedstrijd(ref.id);
+  };
+}
+
+/* ==================== WEDSTRIJD: OPENEN & OPSLAAN ==================== */
+function openWedstrijd(wid){
+  S.wedstrijdId = wid; S.kwart = '1'; S.geselecteerd = null;
+  stopUnsubs('wedstrijd');
+  S.unsub.wedstrijd = onSnapshot(doc(db,'teams',S.teamId,'wedstrijden',wid), snap => {
+    if (!snap.exists()){ sluitWedstrijd(); return; }
+    if (snap.metadata.hasPendingWrites) return;            // eigen schrijfactie
+    if (Date.now() - S.lokaalTot < 1800) return;           // lokale wijziging onderweg
+    S.wedstrijd = snap.data(); renderWedstrijd();
+  });
+  toon('wedstrijd');
+}
+function sluitWedstrijd(){
+  stopUnsubs('wedstrijd');
+  clearInterval(S.klokInterval); S.klokInterval = null;
+  S.wedstrijd = null; S.wedstrijdId = null;
+  renderTeam(); toon('team');
+}
+function bewaarWedstrijd(){
+  S.lokaalTot = Date.now();
+  clearTimeout(S.saveTimer);
+  S.saveTimer = setTimeout(() => {
+    setDoc(doc(db,'teams',S.teamId,'wedstrijden',S.wedstrijdId), S.wedstrijd)
+      .catch(e => meld('Opslaan mislukt: ' + e.code));
+  }, 600);
+}
+
+/* ==================== KLOK ==================== */
+const huidigKwart = () => S.wedstrijd.kwarten[S.kwart];
+function klokSec(k){ return k.klok.base + (k.klok.running ? (Date.now() - k.klok.start)/1000 : 0); }
+function kwartLive(k){ return k.klok.running || k.klok.base > 0; }
+function kwartDuurSec(w,k){ const e = klokSec(k); return e > 5 ? Math.round(e) : Math.round(w.kwartduur*60); }
+
+function klokStartPauze(){
+  const k = huidigKwart();
+  if (k.klok.running){ k.klok.base = klokSec(k); k.klok.running = false; }
+  else { k.klok.start = Date.now(); k.klok.running = true; }
+  bewaarWedstrijd(); renderWedstrijd();
+}
+function klokReset(){
+  const k = huidigKwart();
+  if (!confirm('Klok van dit kwart op nul zetten?' + (k.events.length ? '\nGeregistreerde wissels blijven staan.' : ''))) return;
+  k.klok = {base:0, running:false, start:0};
+  bewaarWedstrijd(); renderWedstrijd();
+}
+function tikKlok(){
+  const w = S.wedstrijd; if (!w) return;
+  const k = huidigKwart();
+  const el = $('#klokTijd'); if (el) el.textContent = mmss(klokSec(k));
+}
+
+/* ==================== OPSTELLING-LOGICA ==================== */
+/* k.lineup = startopstelling van het kwart; events bouwen daar live op voort */
+function effectieveLineup(k){
+  const l = {...k.lineup};
+  for (const e of [...k.events].sort((a,b) => a.sec - b.sec)){
+    if (e.in) l[e.slot] = e.in;
+    else delete l[e.slot];
+  }
+  return l;
+}
+function plaats(pid, slotId){
+  const k = huidigKwart(), live = kwartLive(k);
+  const l = effectieveLineup(k);
+  const huidigeSlot = Object.keys(l).find(s => l[s] === pid);     // staat pid al op het veld?
+  const bezet = l[slotId];
+
+  if (huidigeSlot === slotId) return;
+  if (huidigeSlot){                                                // veld → veld: positiewissel
+    delete k.lineup[huidigeSlot];
+    if (k.lineup[slotId] !== undefined || bezet){
+      // ruil in startopstelling (speeltijd verandert niet)
+      const ander = k.lineup[slotId];
+      if (ander !== undefined){ k.lineup[huidigeSlot] = ander; }
+      // events die naar deze slots verwijzen laten we staan; bij live ruilen we simpelweg de startposities
+      for (const e of k.events){ if (e.slot === slotId) e.slot = huidigeSlot; else if (e.slot === huidigeSlot) e.slot = slotId; }
+    }
+    k.lineup[slotId] = pid;
+  } else if (live){                                                // bank → veld tijdens het spel = wissel
+    const sec = Math.round(klokSec(k));
+    k.events.push({in: pid, uit: bezet || null, slot: slotId, sec});
+    if (bezet) meld(`${spelerNaam(pid)} erin, ${spelerNaam(bezet)} eruit · ${mmss(sec)}`);
+  } else {                                                         // vooraf klaarzetten
+    k.lineup[slotId] = pid;                                        // bezet schuift vanzelf naar de bank
+  }
+  S.geselecteerd = null;
+  bewaarWedstrijd(); renderWedstrijd();
+}
+function naarBank(pid){
+  const k = huidigKwart(), live = kwartLive(k);
+  const l = effectieveLineup(k);
+  const slot = Object.keys(l).find(s => l[s] === pid);
+  if (!slot) { S.geselecteerd = null; renderWedstrijd(); return; }
+  if (live){
+    const sec = Math.round(klokSec(k));
+    k.events.push({in: null, uit: pid, slot, sec});
+    meld(`${spelerNaam(pid)} eruit · ${mmss(sec)}`);
+  } else delete k.lineup[slot];
+  S.geselecteerd = null;
+  bewaarWedstrijd(); renderWedstrijd();
+}
+function verwijderEvent(i){
+  huidigKwart().events.splice(i,1);
+  bewaarWedstrijd(); renderWedstrijd();
+}
+function kopieerVorigKwart(){
+  const nr = Number(S.kwart);
+  if (nr === 1) return;
+  const vorig = S.wedstrijd.kwarten[nr-1];
+  huidigKwart().lineup = effectieveLineup(vorig);   // eindopstelling vorig kwart als start
+  bewaarWedstrijd(); renderWedstrijd();
+  meld('Eindopstelling van kwart ' + (nr-1) + ' overgenomen');
+}
+
+/* ==================== SPEELTIJD-BEREKENING ==================== */
+function kwartGespeeld(k){ return Object.keys(k.lineup||{}).length > 0 || (k.events||[]).length > 0; }
+
+function analyseKwart(w, k){
+  const res = {tijd:{}, keeper:new Set(), lijn:{}};                 // lijn: pid -> {V:n,M:n,A:n,K:n}
+  if (!kwartGespeeld(k)) return res;
+  const D = kwartDuurSec(w, k);
+  const aan = {};
+  const telLijn = (pid, l) => { (res.lijn[pid] ||= {}); res.lijn[pid][l] = (res.lijn[pid][l]||0) + 1; };
+  for (const [slot, pid] of Object.entries(k.lineup||{})){
+    aan[pid] = 0; telLijn(pid, slotLijn(slot));
+    if (slot === 'K') res.keeper.add(pid);
+  }
+  for (const e of [...(k.events||[])].sort((a,b) => a.sec - b.sec)){
+    const sec = Math.min(e.sec, D);
+    if (e.uit && aan[e.uit] != null){
+      res.tijd[e.uit] = (res.tijd[e.uit]||0) + Math.max(0, sec - aan[e.uit]);
+      delete aan[e.uit];
+    }
+    if (e.in){
+      aan[e.in] = sec; telLijn(e.in, slotLijn(e.slot));
+      if (e.slot === 'K') res.keeper.add(e.in);
+    }
+  }
+  for (const [pid, start] of Object.entries(aan))
+    res.tijd[pid] = (res.tijd[pid]||0) + Math.max(0, D - start);
+  return res;
+}
+function analyseWedstrijd(w){
+  const tot = {tijd:{}, keeper:{}, lijn:{}, kwarten:0};
+  for (const nr of ['1','2','3','4']){
+    const k = w.kwarten[nr]; if (!k || !kwartGespeeld(k)) continue;
+    tot.kwarten++;
+    const a = analyseKwart(w, k);
+    for (const [pid, s] of Object.entries(a.tijd)) tot.tijd[pid] = (tot.tijd[pid]||0) + s;
+    for (const pid of a.keeper) tot.keeper[pid] = (tot.keeper[pid]||0) + 1;
+    for (const [pid, l] of Object.entries(a.lijn)){
+      tot.lijn[pid] ||= {};
+      for (const [ln, n] of Object.entries(l)) tot.lijn[pid][ln] = (tot.lijn[pid][ln]||0) + n;
+    }
+  }
+  return tot;
+}
+
+/* ==================== STATISTIEK-TAB ==================== */
+function htmlStats(){
+  if (!S.spelers.length) return `<div class="kaart leeg">Voeg eerst spelers toe.</div>`;
+  const tot = {tijd:{}, keeper:{}, lijn:{}, wedstrijden:{}};
+  for (const w of S.wedstrijden){
+    const a = analyseWedstrijd(w);
+    if (!a.kwarten) continue;
+    for (const [pid, s] of Object.entries(a.tijd)){
+      tot.tijd[pid] = (tot.tijd[pid]||0) + s;
+      tot.wedstrijden[pid] = (tot.wedstrijden[pid]||0) + 1;
+    }
+    for (const [pid, n] of Object.entries(a.keeper)) tot.keeper[pid] = (tot.keeper[pid]||0) + n;
+    for (const [pid, l] of Object.entries(a.lijn)){
+      tot.lijn[pid] ||= {};
+      for (const [ln, n] of Object.entries(l)) tot.lijn[pid][ln] = (tot.lijn[pid][ln]||0) + n;
+    }
+  }
+  const rijen = [...S.spelers].sort((a,b) => (tot.tijd[b.id]||0) - (tot.tijd[a.id]||0));
+  const heeftData = Object.keys(tot.tijd).length > 0;
+  return `
+    ${heeftData ? '' : `<div class="kaart leeg" style="margin-bottom:12px">Nog geen gespeelde wedstrijden.<br>Zodra je opstellingen maakt, verschijnt hier automatisch de speeltijd per speler.</div>`}
+    <table class="stat-tabel">
+      <thead><tr><th>Speler</th><th>Wed.</th><th>Speeltijd</th><th>K</th><th>V</th><th>M</th><th>A</th></tr></thead>
+      <tbody>${rijen.map(p => {
+        const l = tot.lijn[p.id] || {};
+        return `<tr>
+          <td class="naam-cel">${esc(p.naam)}</td>
+          <td>${tot.wedstrijden[p.id]||0}</td>
+          <td class="tijd-cel">${tot.tijd[p.id] ? uurMin(tot.tijd[p.id]) : '—'}</td>
+          <td>${tot.keeper[p.id]||0}</td>
+          <td>${l.V||0}</td><td>${l.M||0}</td><td>${l.A||0}</td></tr>`;
+      }).join('')}</tbody>
+    </table>
+    <p style="font-size:12px;color:var(--ink-2);margin-top:10px;line-height:1.5">
+      K = kwarten als keeper · V/M/A = kwarten in verdediging, middenveld en aanval.
+      Speeltijd komt van de kwartklok; zonder klok telt de ingestelde kwartduur.</p>`;
+}
+
+/* ==================== WEDSTRIJD: WEERGAVE ==================== */
+function renderWedstrijd(){
+  const w = S.wedstrijd; if (!w) return;
+  const k = huidigKwart();
+  const slots = bouwSlots(w.format, w.formatie);
+  const lineup = effectieveLineup(k);
+  const opVeld = new Set(Object.values(lineup));
+  const bank = (w.selectie||[]).filter(pid => !opVeld.has(pid) && speler(pid));
+  const live = kwartLive(k);
+  const aKwart = analyseKwart(w, k);
+  const aWed = analyseWedstrijd(w);
+
+  const chipHtml = (pid, bron, slotId='') => {
+    const sel = S.geselecteerd?.pid === pid;
+    return `<div class="chip ${slotId==='K'?'keeper':''} ${sel?'geselecteerd':''}"
+      data-chip="${pid}" data-bron="${bron}" data-chipslot="${slotId}">
+      <div class="shirt">${esc(spelerNr(pid))}</div>
+      <div class="naam">${esc(spelerNaam(pid))}</div></div>`;
+  };
+
+  const v = $('#view-wedstrijd');
+  v.innerHTML = `
+    <div class="kop"><button class="terug" id="naarTeam">‹</button>
+      <h1>${w.thuis ? esc(S.team.naam)+' – '+esc(w.tegenstander) : esc(w.tegenstander)+' – '+esc(S.team.naam)}
+      <span class="sub">${datumNL(w.datum)} · ${esc(w.formatie)}</span></h1>
+      <button class="terug" id="wInstellingen" title="Wedstrijdinstellingen">⚙️</button></div>
+
+    <div class="kwarten">${['1','2','3','4'].map(nr => {
+      const kk = w.kwarten[nr];
+      return `<button data-kwart="${nr}" class="${S.kwart===nr?'actief':''}">K${nr}${kwartGespeeld(kk)?' •':''}</button>`;
+    }).join('')}</div>
+
+    <div class="klok">
+      <div><div class="tijd" id="klokTijd">${mmss(klokSec(k))}</div>
+        <div class="label">Kwart ${S.kwart} · ${w.kwartduur} min</div></div>
+      <div class="acties">
+        ${Number(S.kwart) > 1 && !kwartGespeeld(k) ? `<button id="kopieerKwart" title="Eindopstelling vorig kwart overnemen">⧉</button>` : ''}
+        <button id="klokReset" title="Klok terugzetten">↺</button>
+        <button id="klokStart" class="primair" title="${k.klok.running?'Pauze':'Start'}">${k.klok.running?'❚❚':'▶'}</button>
+      </div>
+    </div>
+
+    <div class="veld-wrap"><div class="veld" id="veld">
+      <div class="lijn midden"></div><div class="lijn cirkel"></div>
+      <div class="lijn zestien-o"></div><div class="lijn vijf-o"></div>
+      <div class="lijn zestien-b"></div><div class="lijn vijf-b"></div>
+      ${slots.map(s => `
+        <div class="slot ${s.id==='K'?'doel':''}" data-slot="${s.id}" style="left:${s.x}%;top:${s.y}%">
+          ${lineup[s.id] ? chipHtml(lineup[s.id], 'veld', s.id) : `<div class="ring">${s.id}</div>`}
+        </div>`).join('')}
+    </div></div>
+
+    <div class="bank" id="bank">
+      <div class="bank-kop"><span class="t">Wissels</span>
+        <span class="n">${bank.length} op de bank · <button id="kiesSelectie" style="color:var(--fluo);font-weight:600;font-size:12px;text-decoration:underline">selectie</button></span></div>
+      <div class="bank-chips">${bank.length ? bank.map(pid => chipHtml(pid, 'bank')).join('')
+        : `<div class="leeg-bank">Iedereen staat op het veld. Sleep een veldspeler hierheen om te wisselen.</div>`}</div>
+    </div>
+
+    ${k.events.length ? `<div class="log">
+      <div class="sectie-kop">Wissels kwart ${S.kwart}</div>
+      ${[...k.events].map((e,i) => ({...e, i})).sort((a,b) => a.sec - b.sec).map(e => `
+        <div class="log-item">
+          ${e.in ? `<span class="nr in">▲${esc(spelerNr(e.in))}</span>` : ''}
+          ${e.uit ? `<span class="nr uit">▼${esc(spelerNr(e.uit))}</span>` : ''}
+          <span>${e.in ? esc(spelerNaam(e.in)) : ''}${e.in && e.uit ? ' ↔ ' : ''}${e.uit ? esc(spelerNaam(e.uit)) : ''}</span>
+          <span class="min">${mmss(e.sec)}</span>
+          <button class="verwijder" data-weg-ev="${e.i}" title="Wissel verwijderen">✕</button>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <details class="uitklap"><summary>Speeltijd deze wedstrijd</summary>
+      <div class="inhoud"><table class="stat-tabel">
+        <thead><tr><th>Speler</th><th>Kwart ${S.kwart}</th><th>Totaal</th><th>Keeper</th></tr></thead>
+        <tbody>${(w.selectie||[]).filter(pid => speler(pid))
+          .sort((a,b) => (aWed.tijd[b]||0) - (aWed.tijd[a]||0)).map(pid => `
+          <tr><td class="naam-cel">${esc(spelerNaam(pid))}</td>
+            <td>${aKwart.tijd[pid] ? mmss(aKwart.tijd[pid]) : '—'}</td>
+            <td class="tijd-cel">${aWed.tijd[pid] ? uurMin(aWed.tijd[pid]) : '—'}</td>
+            <td>${aWed.keeper[pid] ? aWed.keeper[pid]+'×' : ''}</td></tr>`).join('')}
+        </tbody></table></div>
+    </details>
+
+    <button class="knop gevaar vol" id="wegWedstrijd" style="margin-top:16px">Wedstrijd verwijderen</button>`;
+
+  /* ---- koppelingen ---- */
+  v.querySelector('#naarTeam').onclick = sluitWedstrijd;
+  v.querySelector('#wInstellingen').onclick = modalWedstrijdInstellingen;
+  v.querySelectorAll('[data-kwart]').forEach(b => b.onclick = () => { S.kwart = b.dataset.kwart; S.geselecteerd = null; renderWedstrijd(); });
+  v.querySelector('#klokStart').onclick = klokStartPauze;
+  v.querySelector('#klokReset').onclick = klokReset;
+  const kp = v.querySelector('#kopieerKwart'); if (kp) kp.onclick = kopieerVorigKwart;
+  v.querySelector('#kiesSelectie').onclick = modalSelectie;
+  v.querySelectorAll('[data-weg-ev]').forEach(b => b.onclick = e => { e.stopPropagation(); verwijderEvent(Number(b.dataset.wegEv)); });
+  v.querySelector('#wegWedstrijd').onclick = async () => {
+    if (!confirm('Deze wedstrijd en alle opstellingen verwijderen?')) return;
+    await deleteDoc(doc(db,'teams',S.teamId,'wedstrijden',S.wedstrijdId));
+    sluitWedstrijd();
+  };
+
+  /* tikken van de klok */
+  clearInterval(S.klokInterval);
+  if (k.klok.running) S.klokInterval = setInterval(tikKlok, 500);
+
+  koppelSleep(v);
+}
+
+/* ==================== WEDSTRIJDINSTELLINGEN & SELECTIE ==================== */
+function modalWedstrijdInstellingen(){
+  const w = S.wedstrijd;
+  openModal(`
+    <h2>Wedstrijdinstellingen</h2>
+    <div class="veldgroep"><label>Tegenstander</label>
+      <input class="invoer" id="mITegen" value="${esc(w.tegenstander)}"></div>
+    <div class="rij">
+      <div class="veldgroep"><label>Datum</label><input class="invoer" type="date" id="mIDatum" value="${esc(w.datum)}"></div>
+      <div class="veldgroep"><label>Kwartduur (min)</label><input class="invoer" id="mIDuur" inputmode="decimal" value="${esc(w.kwartduur)}"></div>
+    </div>
+    <div class="veldgroep"><label>Formatie (excl. keeper)</label>
+      <div class="segment" id="mIFormatie">${Object.keys(FORMATIES[w.format]).map(f =>
+        `<button data-f="${f}" class="${w.formatie===f?'actief':''}">${f}</button>`).join('')}</div>
+      <p style="font-size:12px;color:var(--ink-2);margin-top:6px">Spelers blijven zoveel mogelijk op hun plek staan bij het wisselen van formatie.</p></div>
+    <button class="knop vol" id="mIOk">Opslaan</button>`);
+  let formatie = w.formatie;
+  $$('#mIFormatie button').forEach(b => b.onclick = () => { $$('#mIFormatie button').forEach(x=>x.classList.remove('actief')); b.classList.add('actief'); formatie = b.dataset.f; });
+  $('#mIOk').onclick = () => {
+    w.tegenstander = $('#mITegen').value.trim() || w.tegenstander;
+    w.datum = $('#mIDatum').value || w.datum;
+    w.kwartduur = parseFloat(($('#mIDuur').value||'').replace(',','.')) || w.kwartduur;
+    if (formatie !== w.formatie){
+      const nieuweIds = new Set(bouwSlots(w.format, formatie).map(s => s.id));
+      for (const k of Object.values(w.kwarten)){
+        for (const slot of Object.keys(k.lineup)) if (!nieuweIds.has(slot)) delete k.lineup[slot];
+        k.events = k.events.filter(e => nieuweIds.has(e.slot));
+      }
+      w.formatie = formatie;
+    }
+    sluitModal(); bewaarWedstrijd(); renderWedstrijd();
+  };
+}
+
+function modalSelectie(){
+  const w = S.wedstrijd;
+  const sel = new Set(w.selectie || []);
+  openModal(`
+    <h2>Selectie voor deze wedstrijd</h2>
+    <p style="font-size:13.5px;color:var(--ink-2);margin-bottom:12px">Vink af wie er vandaag bij is. Afwezige spelers verschijnen niet op de bank.</p>
+    ${S.spelers.map(p => `
+      <label class="speler-rij" style="cursor:pointer">
+        <input type="checkbox" data-sel="${p.id}" ${sel.has(p.id)?'checked':''} style="width:19px;height:19px;accent-color:var(--grass)">
+        <div class="mini-shirt">${esc(p.nummer ?? '·')}</div><div class="n">${esc(p.naam)}</div>
+      </label>`).join('')}
+    <button class="knop vol" id="mSelOk" style="margin-top:6px">Klaar</button>`);
+  $('#mSelOk').onclick = () => {
+    w.selectie = $$('#modalInhoud [data-sel]').filter(c => c.checked).map(c => c.dataset.sel);
+    const toegestaan = new Set(w.selectie);
+    for (const k of Object.values(w.kwarten)){
+      for (const [slot, pid] of Object.entries(k.lineup)) if (!toegestaan.has(pid)) delete k.lineup[slot];
+      k.events = k.events.filter(e => (!e.in || toegestaan.has(e.in)) && (!e.uit || toegestaan.has(e.uit)));
+    }
+    sluitModal(); bewaarWedstrijd(); renderWedstrijd();
+  };
+}
+
+/* ==================== SLEPEN & TIKKEN ==================== */
+function koppelSleep(v){
+  const veld = v.querySelector('#veld');
+  const bank = v.querySelector('#bank');
+  let drag = null;
+
+  const doelOnder = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const slot = el.closest('.slot');
+    if (slot && veld.contains(slot)) return {type:'slot', id:slot.dataset.slot, el:slot};
+    if (el.closest('#bank')) return {type:'bank', el:bank};
+    return null;
+  };
+  const wisHighlight = () => { $$('.slot.doelwit').forEach(s => s.classList.remove('doelwit')); bank.classList.remove('doelwit'); };
+
+  v.querySelectorAll('[data-chip]').forEach(chip => {
+    chip.addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      drag = {pid: chip.dataset.chip, bron: chip.dataset.bron, chip,
+              x0: ev.clientX, y0: ev.clientY, actief: false};
+    });
+  });
+
+  const beweeg = ev => {
+    if (!drag) return;
+    const dx = ev.clientX - drag.x0, dy = ev.clientY - drag.y0;
+    if (!drag.actief && Math.hypot(dx,dy) > 8){
+      drag.actief = true;
+      drag.chip.classList.add('sleept');
+      const kloon = $('#sleepKloon');
+      kloon.innerHTML = drag.chip.outerHTML.replace('sleept','');
+      kloon.style.display = '';
+    }
+    if (drag.actief){
+      const kloon = $('#sleepKloon');
+      kloon.style.left = ev.clientX + 'px';
+      kloon.style.top  = ev.clientY + 'px';
+      wisHighlight();
+      const d = doelOnder(ev.clientX, ev.clientY);
+      if (d?.type === 'slot') d.el.classList.add('doelwit');
+      if (d?.type === 'bank' && drag.bron === 'veld') bank.classList.add('doelwit');
+    }
+  };
+  const los = ev => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    $('#sleepKloon').style.display = 'none';
+    wisHighlight();
+    d.chip.classList.remove('sleept');
+    if (d.actief){
+      const doel = doelOnder(ev.clientX, ev.clientY);
+      if (doel?.type === 'slot') plaats(d.pid, doel.id);
+      else if (doel?.type === 'bank' && d.bron === 'veld') naarBank(d.pid);
+    } else {
+      /* tik: selecteren of actie uitvoeren */
+      if (S.geselecteerd && S.geselecteerd.pid !== d.pid){
+        const k = huidigKwart(), l = effectieveLineup(k);
+        const slot = Object.keys(l).find(s => l[s] === d.pid);
+        if (slot){ plaats(S.geselecteerd.pid, slot); return; }
+      }
+      S.geselecteerd = S.geselecteerd?.pid === d.pid ? null : {pid: d.pid, bron: d.bron};
+      renderWedstrijd();
+    }
+  };
+  document.onpointermove = beweeg;
+  document.onpointerup = los;
+  document.onpointercancel = los;
+
+  /* tik op lege positie of bank met geselecteerde speler */
+  veld.querySelectorAll('.slot').forEach(slot => {
+    slot.addEventListener('click', ev => {
+      if (!S.geselecteerd) return;
+      if (ev.target.closest('[data-chip]')) return;       // chips regelen zichzelf
+      plaats(S.geselecteerd.pid, slot.dataset.slot);
+    });
+  });
+  bank.addEventListener('click', ev => {
+    if (!S.geselecteerd || S.geselecteerd.bron !== 'veld') return;
+    if (ev.target.closest('[data-chip],button')) return;
+    naarBank(S.geselecteerd.pid);
+  });
+}
+</script>
+</body>
+</html>
