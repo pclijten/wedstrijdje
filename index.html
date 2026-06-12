@@ -168,7 +168,31 @@ input,select{font:inherit;color:inherit}
 .log .log-item.kaart{border-left:3px solid #F5C400}
 .log .log-item.kaart.rood{border-left-color:#E5484D}
 
-/* ---------- Spelermenu ---------- */
+/* ---------- Handleiding ---------- */
+.hl{font-size:14px;line-height:1.6;color:var(--ink)}
+.hl h3{font-family:'Barlow Condensed';font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.5px;color:var(--grass);margin:18px 0 8px;display:flex;align-items:center;gap:8px}
+.hl h3:first-child{margin-top:0}
+.hl p{margin-bottom:10px}
+.hl ul{margin:0 0 12px 0;padding-left:4px;list-style:none}
+.hl ul li{padding:6px 0 6px 26px;position:relative}
+.hl ul li::before{content:'→';position:absolute;left:4px;top:6px;color:var(--grass);font-weight:700}
+.hl b{color:var(--pitch-ink)}
+.hl .tip{background:#FFF3CD;border-left:3px solid #F5C400;padding:10px 12px;border-radius:8px;margin:10px 0;font-size:13.5px}
+.hl .tip b{color:#8B6F00}
+.hl kbd{display:inline-block;background:var(--card);border:1px solid var(--hair);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:12.5px;font-weight:600;font-family:inherit;color:var(--ink)}
+
+/* ---------- Handleiding ---------- */
+.hl{font-size:14px;line-height:1.6;color:var(--ink)}
+.hl h3{font-family:'Barlow Condensed';font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.5px;color:var(--grass);margin:18px 0 8px;display:flex;align-items:center;gap:8px}
+.hl h3:first-child{margin-top:0}
+.hl p{margin-bottom:10px}
+.hl ul{margin:0 0 12px 0;padding-left:4px;list-style:none}
+.hl ul li{padding:6px 0 6px 26px;position:relative}
+.hl ul li::before{content:'→';position:absolute;left:4px;top:6px;color:var(--grass);font-weight:700}
+.hl b{color:var(--pitch-ink)}
+.hl .tip{background:#FFF3CD;border-left:3px solid #F5C400;padding:10px 12px;border-radius:8px;margin:10px 0;font-size:13.5px}
+.hl .tip b{color:#8B6F00}
+.hl kbd{display:inline-block;background:var(--card);border:1px solid var(--hair);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:12.5px;font-weight:600;font-family:inherit;color:var(--ink)}
 .speler-acties{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
 .speler-acties button{padding:13px;border-radius:11px;background:var(--card);box-shadow:var(--shadow);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:flex-start;gap:10px}
 .speler-acties button .em{font-size:20px}
@@ -680,13 +704,14 @@ function renderTeam(){
   if (tab === 'spelers')     inhoud = htmlSpelers();
   if (tab === 'stats')       inhoud = htmlStats();
   if (tab === 'instellingen')inhoud = htmlInstellingen();
+  if (tab === 'help')        inhoud = htmlHandleiding();
 
   v.innerHTML = `
     <div class="kop"><button class="terug" id="naarTeams">‹</button>
       <h1>${esc(S.team.naam)}<span class="sub">${S.team.categorie ? esc(S.team.categorie)+' · ' : ''}${esc(S.team.format)} tegen ${esc(S.team.format)}</span></h1></div>
     ${inhoud}
     <nav class="onderbalk">
-      ${[['wedstrijden','📋','Wedstrijden'],['spelers','👕','Spelers'],['stats','⏱','Statistiek'],['instellingen','⚙️','Team']]
+      ${[['wedstrijden','📋','Wedstrijden'],['spelers','👕','Spelers'],['stats','⏱','Stats'],['instellingen','⚙️','Team'],['help','❓','Help']]
         .map(([id,ico,naam]) => `<button data-tab="${id}" class="${tab===id?'actief':''}"><span class="ico">${ico}</span>${naam}</button>`).join('')}
     </nav>`;
 
@@ -732,6 +757,102 @@ function htmlSpelers(){
         <button class="actie" data-weg-p="${p.id}">🗑</button>
       </div>`).join('')
     : `<div class="kaart leeg">Nog geen spelers.<br>Voeg je selectie toe — naam en rugnummer is genoeg.</div>`}`;
+}
+
+/* ---------- Tab: handleiding ---------- */
+function htmlHandleiding(){
+  return `<div class="hl">
+    <h3>👋 Welkom bij Opstelling</h3>
+    <p>Een app om voor je voetbalteam de opstelling te maken, wissels te beheren, speeltijd eerlijk te verdelen en de wedstrijd te loggen. Alles werkt realtime, dus collega-coaches zien direct dezelfde informatie.</p>
+
+    <h3>🚀 Snel beginnen</h3>
+    <ul>
+      <li>Voeg je <b>spelers</b> toe onder het tabblad 👕 — naam en rugnummer is genoeg.</li>
+      <li>Maak een <b>nieuwe wedstrijd</b> aan onder 📋. Kies competitie of toernooi.</li>
+      <li>Sleep spelers van de bank naar het veld of tik ze aan en tik daarna een positie.</li>
+      <li>Start de klok ▶ zodra de wedstrijd begint. Wissels tijdens het spel worden automatisch gelogd met tijdstip.</li>
+    </ul>
+
+    <h3>⚽ Spelers slepen & wisselen</h3>
+    <p>Op het veld werk je met spelersbolletjes (de <b>chips</b>):</p>
+    <ul>
+      <li><b>Slepen</b>: houd een speler vast en sleep hem naar een andere positie, een lege plek, of naar de bank.</li>
+      <li><b>Tikken</b>: één tik selecteert (gele rand). Tik daarna een doel om de speler daar neer te zetten.</li>
+      <li><b>Positie ruilen</b>: sleep een veldspeler naar een andere veldspeler — ze wisselen van positie.</li>
+      <li><b>Loopt de klok?</b> Dan wordt elke bank→veld of veld→bank actie geregistreerd als wissel met tijdstip in het log.</li>
+    </ul>
+    <div class="tip"><b>Tip:</b> de bank is gesorteerd op minste speeltijd — wie aan de beurt is, staat vooraan.</div>
+
+    <h3>🟢 Stippen onder spelers</h3>
+    <p>Onder elke chip verschijnen vanaf het tweede kwart kleine stippen — één per eerder kwart:</p>
+    <ul>
+      <li><b>Groen</b> = die periode gespeeld.</li>
+      <li><b>Rood</b> = die periode op de bank.</li>
+    </ul>
+    <p>Zo zie je in één oogopslag wie er nu echt aan de beurt is.</p>
+
+    <h3>⏱ Kwarten, helften & klok</h3>
+    <ul>
+      <li>De app stelt het juiste aantal periodes en de speeltijd in op basis van de KNVB-categorie van je team.</li>
+      <li>Tik op een periode-tab (<kbd>K1</kbd>, <kbd>K2</kbd> ... of <kbd>H1</kbd>, <kbd>H2</kbd>) om eraan te werken.</li>
+      <li>De klok stopt <b>automatisch</b> op de maximale speeltijd — je kunt hem dus niet vergeten.</li>
+      <li>Open je een leeg kwart, dan wordt de eindopstelling van het vorige kwart automatisch overgenomen.</li>
+      <li>Met ↺ zet je de klok terug op nul; wissels blijven staan.</li>
+    </ul>
+
+    <h3>📅 Wissels vooraf plannen</h3>
+    <p>Onder het wisselvak staat <b>+ Wissel plannen</b>: kies wie erin, wie eruit en na hoeveel minuten. Zodra de klok dat moment passeert, knippert de geplande wissel en trilt je telefoon. Tik op <kbd>✓</kbd> om hem door te voeren.</p>
+
+    <h3>⚽ Doelpunten registreren</h3>
+    <ul>
+      <li>Tik op de <b>⚽-knop</b> aan jouw kant van het scorebord en kies de speler die scoorde.</li>
+      <li>Tegendoelpunt: één tik op de andere ⚽-knop.</li>
+      <li>Doelpunten verschijnen in het log en in de seizoenstatistieken (topscorer).</li>
+    </ul>
+
+    <h3>🟨 Kaarten & straffen</h3>
+    <p>De gele knop naast het scorebord opent het kaartenmenu. Kies de speler en het type:</p>
+    <ul>
+      <li><b>🟨 Geel</b> — waarschuwing. Een tweede gele in dezelfde wedstrijd geeft <b>automatisch rood</b>.</li>
+      <li><b>⏱ Tijdstraf</b> — 5 minuten voor pupillen (t/m JO/MO15), 10 minuten voor JO/MO16+ en senioren.</li>
+      <li><b>🟥 Rood</b> — de speler wordt direct van het veld gehaald.</li>
+    </ul>
+
+    <h3>👑 Aanvoerder</h3>
+    <p>Onder ⚙️ in de wedstrijd kies je per wedstrijd de aanvoerder. Hij krijgt een geel <b>C</b>-bandje op zijn shirt. In de statistieken zie je hoe vaak iemand aanvoerder is geweest — handig om te rouleren.</p>
+
+    <h3>🏆 Toernooien</h3>
+    <p>Bij een nieuwe wedstrijd kies je <b>Toernooi</b>. Geef het aantal wedstrijden op en het aantal helften per wedstrijd. De tabs worden dan <kbd>W1</kbd>, <kbd>W2</kbd> ... De tegenstander per wedstrijd vul je in door op de naam in het scorebord te tikken (gestippeld onderstreept).</p>
+    <div class="tip"><b>Op één scherm:</b> alle wissels en speeltijden lopen over het hele toernooi door, zodat je in wedstrijd 4 ziet wie er bij wedstrijd 1, 2 en 3 al heeft gespeeld.</div>
+
+    <h3>📋 Wedstrijdverslag</h3>
+    <p>Onderaan elke wedstrijd staat <b>📋 Wedstrijdverslag</b>. De app maakt automatisch een leesbare tekst met uitslag, doelpunten, speeltijd, wissels, kaarten en aanvoerder. Pas hem aan en deel via de knop met WhatsApp, mail of klembord.</p>
+
+    <h3>👥 Meerdere coaches in één team</h3>
+    <p>Onder ⚙️ <b>Team</b> vind je de 6-letterige <b>teamcode</b>. Deel die met collega-coaches:</p>
+    <ul>
+      <li>Ze openen de app en kiezen op het startscherm <b>"Inloggen met teamcode"</b>.</li>
+      <li>Daarna zien ze direct dezelfde wedstrijden, spelers en statistieken.</li>
+      <li>Wijzigingen lopen realtime door — handig als de assistent-coach langs de lijn de wissels bijhoudt en de hoofdcoach de score.</li>
+    </ul>
+
+    <h3>📐 Format en formatie wijzigen</h3>
+    <p>Onder ⚙️ in een wedstrijd pas je het format (6×6, 8×8, 9×9, 11×11, 4×4) en de formatie aan. Spelers blijven zoveel mogelijk op hun plek staan; slots die wegvallen worden netjes opgeschoond.</p>
+
+    <h3>📊 Statistieken</h3>
+    <p>Onder ⏱ vind je het seizoensoverzicht: speeltijd, doelpunten, aanvoerdersbeurten, keeperbeurten en kaarten per speler. Sorteert vanzelf op meeste speeltijd.</p>
+
+    <h3>💡 Praktische tips</h3>
+    <ul>
+      <li>Voeg de app als <b>snelkoppeling op je startscherm</b> toe (browsermenu → "Toevoegen aan beginscherm") voor app-gevoel.</li>
+      <li>Werkt zonder problemen als de telefoon op slot gaat — de klok loopt door op de juiste tijd.</li>
+      <li>Met een powerbank langs de lijn ben je verzekerd van een hele wedstrijd.</li>
+    </ul>
+
+    <p style="font-size:12.5px;color:var(--ink-2);text-align:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--hair)">
+      Vragen of ideeën? Geef ze door aan je hoofdcoach.<br>Veel succes langs de lijn! ⚽
+    </p>
+  </div>`;
 }
 
 /* ---------- Tab: instellingen ---------- */
